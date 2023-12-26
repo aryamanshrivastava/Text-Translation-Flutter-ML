@@ -1,6 +1,7 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, prefer_const_constructors
 
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 
 void main() {
@@ -33,11 +34,15 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController textEditingController = TextEditingController();
   String result = 'Translated text...';
   dynamic modelManager;
+  dynamic languageIdentifier;
+
   @override
   void initState() {
     //implement initState
     super.initState();
+    languageIdentifier = LanguageIdentifier(confidenceThreshold: 0.5);
     modelManager = OnDeviceTranslatorModelManager();
+
     checkAndDownloadModel();
   }
 
@@ -52,7 +57,6 @@ class _MyHomePageState extends State<MyHomePage> {
         await modelManager.isModelDownloaded(TranslateLanguage.english.bcpCode);
     isHindi =
         await modelManager.isModelDownloaded(TranslateLanguage.hindi.bcpCode);
-
     //download models if not downloaded
     if (!isEnglish) {
       isEnglish =
@@ -65,32 +69,44 @@ class _MyHomePageState extends State<MyHomePage> {
     //if models are loaded then create translator
     if (isEnglish && isHindi) {
       onDeviceTranslator = OnDeviceTranslator(
-        sourceLanguage: TranslateLanguage.english,
-        targetLanguage: TranslateLanguage.hindi);
+          sourceLanguage: TranslateLanguage.english,
+          targetLanguage: TranslateLanguage.hindi);
     }
-    
 
     print("check model end");
   }
 
   //translate text
-  translateText(String text) async {}
+  translateText(String text) async {
+    if (isEnglish && isHindi) {
+      final String response = await onDeviceTranslator.translateText(text);
+      setState(() {
+        result = response;
+      });
+    }
+    identifyLanguages(text);
+  }
 
   //identify text
-  identifyLanguages(String text) async {}
+  identifyLanguages(String text) async {
+    final String response = await languageIdentifier.identifyLanguage(text);
+    textEditingController.text += "($response)";
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         resizeToAvoidBottomInset: false,
-        body: SafeArea(
-            child: Container(
+        body: Container(
           color: Colors.black12,
           child: Column(
             children: [
+              SizedBox(
+                height: 40,
+              ),
               Container(
                 margin: const EdgeInsets.only(top: 20, left: 10, right: 10),
-                height: 50,
+                height: 80,
                 child: Card(
                   color: Colors.red,
                   child: Row(
@@ -102,12 +118,12 @@ class _MyHomePageState extends State<MyHomePage> {
                             color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                       Container(
-                        height: 48,
+                        height: 78,
                         width: 1,
                         color: Colors.white,
                       ),
                       const Text(
-                        'Urdu',
+                        'Hindi',
                         style: TextStyle(
                             color: Colors.white, fontWeight: FontWeight.bold),
                       )
@@ -115,56 +131,70 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
               ),
+              SizedBox(
+                height: 40,
+              ),
               Container(
-                margin: const EdgeInsets.only(top: 20, left: 2, right: 2),
+                margin: const EdgeInsets.symmetric(horizontal: 20),
                 width: double.infinity,
-                height: 250,
-                child: Card(
-                  color: Colors.white,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: TextField(
-                      controller: textEditingController,
-                      decoration: const InputDecoration(
-                          fillColor: Colors.white,
-                          hintText: 'Type text here...',
-                          filled: true,
-                          border: InputBorder.none),
-                      style: const TextStyle(color: Colors.black),
-                      maxLines: 100,
-                    ),
+                height: 300,
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10)),
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: textEditingController,
+                    decoration: const InputDecoration(
+                        fillColor: Colors.white,
+                        hintText: 'Type text here...',
+                        filled: true,
+                        border: InputBorder.none),
+                    style: const TextStyle(color: Colors.black, fontSize: 20),
+                    maxLines: 100,
                   ),
                 ),
               ),
+              SizedBox(
+                height: 40,
+              ),
               Container(
-                margin: const EdgeInsets.only(top: 15, left: 13, right: 13),
+                margin: const EdgeInsets.symmetric(horizontal: 20),
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 25),
                       textStyle: const TextStyle(color: Colors.white),
                       backgroundColor: Colors.green),
-                  child: const Text('Translate'),
+                  child: const Text('Translate',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white)),
                   onPressed: () {
                     translateText(textEditingController.text);
                   },
                 ),
               ),
+              SizedBox(
+                height: 40,
+              ),
               Container(
-                margin: const EdgeInsets.only(top: 15, left: 10, right: 10),
+                margin: const EdgeInsets.symmetric(horizontal: 20),
                 width: double.infinity,
-                height: 250,
-                child: Card(
-                  color: Colors.white,
-                  child: Container(
-                      padding: const EdgeInsets.all(15),
-                      child: Text(
-                        result,
-                        style: const TextStyle(fontSize: 18),
-                      )),
-                ),
+                height: 300,
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10)),
+                child: Container(
+                    padding: const EdgeInsets.all(15),
+                    child: Text(
+                      result,
+                      style: const TextStyle(fontSize: 20),
+                    )),
               ),
             ],
           ),
-        )));
+        ));
   }
 }
